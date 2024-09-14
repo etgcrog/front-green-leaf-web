@@ -7,7 +7,8 @@ import {
     FormControl,
     FormField,
     FormItem,
-    FormLabel
+    FormLabel,
+    FormMessage
   } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -35,13 +36,14 @@ export default function LoginHandler() {
 
     return(
         <Form {...formLogin}>
-            <form className="flex flex-col space-y-3" onSubmit={formLogin.handleSubmit(onSubmit)}>
+            <form className="flex flex-col space-y-3 self-center" onSubmit={formLogin.handleSubmit(onSubmit)}>
                 <FormField control={formLogin.control} name="email" render={({field}) => (
                     <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
                             <Input placeholder="email" {...field}></Input>
                         </FormControl>
+                        <FormMessage />
                     </FormItem>
                 )}></FormField>
                 <FormField control={formLogin.control} name="password" render={({field}) => (
@@ -50,6 +52,7 @@ export default function LoginHandler() {
                         <FormControl>
                             <Input placeholder="senha" {...field} type="password"></Input>
                         </FormControl>
+                        <FormMessage />
                     </FormItem>
                 )}></FormField>
                 

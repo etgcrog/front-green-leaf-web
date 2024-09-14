@@ -16,9 +16,10 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import Image from 'next/image';
 import LoginHandler from "./login";
-import imgUrl from '../../public/assets/background_login.png'; // Caminho da imagem
-
+import imgUrl from '../../public/assets/background_login.png';
+import imgLogo from '../../public/assets/logo.png';
 export default function Login() {
     return (
         <main
@@ -32,11 +33,13 @@ export default function Login() {
             className="w-screen h-screen"
         >
             <div className="w-screen h-screen flex items-center justify-end">
-                <Card className="bg-[#213F3C] bg-opacity-90 w-1/3 h-screen card-custom border-0 shadow-none">
-                    <CardHeader>Green Leaf</CardHeader>
-                    <CardContent>
-                        <LoginHandler />
-                    </CardContent>
+                <Card className="bg-[#E4FFFC] bg-opacity-80 w-1/3 h-screen card-custom border-0 shadow-none">
+                        <div className="h-full flex items-center justify-center w-full flex-col">
+                            <Image src={imgLogo} height={180} width={180} alt=""></Image>
+                            <CardContent className="w-full">
+                                <LoginHandler/>
+                            </CardContent>
+                        </div>
                 </Card>
             </div>
         </main>
