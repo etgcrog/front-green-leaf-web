@@ -1,6 +1,0 @@
-.card-custom {
-    border-top-left-radius: 0.3rem !important;
-    border-bottom-left-radius: 0.3rem !important;
-    border-top-right-radius: 0 !important; /* Caso queira ajustar também os cantos superiores */
-    border-bottom-right-radius: 0 !important; /* Caso queira ajustar também os cantos inferiores */
-}
