@@ -4,8 +4,14 @@ import { Input } from "../ui/input";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
 import logo from "@/assets/images/logo.png";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginForm() {
+
+    const searchParams = useSearchParams();
+
+    const error = searchParams.get('error');
+    
     async function login(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
@@ -26,6 +32,9 @@ export default function LoginForm() {
             <Input name="email" type="email" placeholder="email" className=""/>
             <Input name="password" type="password" placeholder="senha" className=""/>
             <Button type="submit" className="bg-green-300">Login</Button>
+            {error === "CredentialsSignin" && (
+                <div className="text-red-500">Credenciais invalidas</div>
+                )}
         </form>
     )
 }
