@@ -8,9 +8,9 @@ export default function PagesLayout({
   return (
     <html lang="en">
         <div>
-            <body className="pt-4">
+            <body className="">
                 <Header></Header>
-                <div className="h-fit min-h-[92vh] pl-16 pr-16 pt-4">
+                <div className="h-fit min-h-[92vh] pl-16 pr-16">
                     {children}
                 </div>
             </body>
