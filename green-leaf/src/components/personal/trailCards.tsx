@@ -7,12 +7,12 @@ export default function TrailCard() {
         <main>
             <Card className="w-full max-h-[150px] rounded-2xl bg-[#FAFAF5]">
                 <div className="flex flex-row md:flex-row">
-                    <div className="w-[50%] md:w-[30%] h-[150px] relative overflow-hidden rounded-l-2xl"> {/* Definindo uma altura fixa */}
+                    <div className="w-40 h-[150px] relative overflow-hidden rounded-l-2xl">
                         <Image 
                             src={logo} 
-                            layout="fill" // Usando layout fill
+                            layout="fill"
                             alt="Foto da trilha" 
-                            objectFit="cover" // Mantém a proporção da imagem
+                            objectFit="cover"
                         />
                     </div>
                     <div className="flex flex-col w-full">

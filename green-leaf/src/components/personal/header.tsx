@@ -5,7 +5,7 @@ import { Button } from "../ui/button";
 export default function Header() {
     return(
         <main className="h-[8vh] pl-3 pr-3 flex flex-row items-center">
-            <div className="w-[5%] h-auto">
+            <div className="w-12">
                 <Image src={logo} alt="Logo" layout="responsive"></Image>
             </div>
             
