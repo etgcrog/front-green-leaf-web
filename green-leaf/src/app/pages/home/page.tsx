@@ -1,15 +1,18 @@
+"use client"
+import Header from "@/components/personal/header";
 import LogoutButton from "@/components/personal/logoutbutton";
 import TrailCard from "@/components/personal/trailCards";
 import { getServerSession } from "next-auth";
+import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 
 export default async function Home() {
-    const session = await getServerSession();
+    const session = useSession();
 
-    // if (!session) {
-    //     redirect("/");
-    // }
-    console.log(session);
+    if (!session) {
+        redirect("/");
+    }
+    console.log(session.data);
 
     return (
         <main>

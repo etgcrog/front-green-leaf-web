@@ -1,21 +1,22 @@
+"use client"
 import Header from "@/components/personal/header";
+import { SessionProvider } from "next-auth/react";
 
-export default function PagesLayout({
+export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en">
-        <div>
-            <body className="">
-                <Header></Header>
-                <div className="h-fit min-h-[92vh] pl-16 pr-16">
-                    {children}
-                </div>
-            </body>
-        </div>
-      
+    <html lang="pt-BR">
+      <body>
+        <Header />
+        <main style={{ marginTop: '8vh' }}>
+          <SessionProvider>
+            {children}
+          </SessionProvider>
+        </main>
+      </body>
     </html>
   );
 }

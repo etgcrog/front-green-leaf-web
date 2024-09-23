@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "../ui/button";
 export default function Header() {
     return(
-        <main className="h-[8vh] pl-3 pr-3 flex flex-row items-center">
+        <header className="h-[8vh] pl-3 pr-3 flex flex-row items-center">
             <div className="w-12">
                 <Image src={logo} alt="Logo" layout="responsive"></Image>
             </div>
@@ -18,6 +18,6 @@ export default function Header() {
                 
             </div>
             <Button className="bg-[#426B1F] text-white ml-5 hover:bg-emerald-900 rounded-3xl">Trilhas</Button>
-        </main>
+        </header>
     )
 }

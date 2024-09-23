@@ -18,7 +18,7 @@ const handler = NextAuth({
                     email: credentials?.email,
                     password: credentials?.password
                 };
-                const res = await fetch(`${GetDotenvVariable("ENVIROMENT")}/users/authenticate`, {
+                const res = await fetch(`${GetDotenvVariable("ENVIROMENT")}/auth/login`, {
                     method: 'POST',
                     body: JSON.stringify(authDTO),
                     headers: { "Content-Type": "application/json" }
@@ -32,5 +32,14 @@ const handler = NextAuth({
             }
         })
     ],
+    callbacks: {
+        async jwt({ token, user}) {
+            return {...token, ...user}
+        },
+        async session({ session, token, user}) {
+            session.user = token;
+            return session;
+        }
+    }
 });
 export { handler as GET, handler as POST };
