@@ -1,11 +1,21 @@
+"use client"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import Image from "next/image";
 import logo from "@/assets/images/logoBg.png";
+import { useRouter } from "next/router";
+import { redirect } from "next/navigation";
 
 export default function TrailCard() {
+
+    const handleRedirect = () => {
+        console.log("veio aq")
+        redirect("/profile");
+      };
+      
     return (
+
         <main>
-            <Card className="w-full max-h-[150px] rounded-2xl bg-[#FAFAF5]">
+            <Card className="w-full max-h-[150px] rounded-2xl bg-[#FAFAF5]" onClick={handleRedirect}>
                 <div className="flex flex-row md:flex-row">
                     <div className="w-40 h-[150px] relative overflow-hidden rounded-l-2xl">
                         <Image 

@@ -9,10 +9,10 @@ import { redirect } from "next/navigation";
 export default async function Home() {
     const session = useSession();
 
-    if (!session) {
-        redirect("/");
-    }
-    console.log(session.data);
+    // if (!session) {
+    //     redirect("/");
+    // }
+    // console.log(session.data);
 
     return (
         <main>
@@ -24,7 +24,7 @@ export default async function Home() {
             <div className="overflow-auto h-[80vh] w-[70%]"> {/* Contêiner com scroll */}
                 <div className="grid grid-cols-1 gap-4 pr-4">
                     {Array.from({ length: 5 }, (_, index) => (
-                        <TrailCard key={index} />
+                        <TrailCard key={index}/>
                     ))}
                 </div>
             </div>
