@@ -2,36 +2,59 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { useSession } from "next-auth/react"; // Importando o useSession
+import { useSession } from "next-auth/react";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import logo from "@/assets/images/logoBg.png";
 import 'leaflet/dist/leaflet.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlay, faPause, faRedo, faStop, faTimes, faCog, faImage } from '@fortawesome/free-solid-svg-icons';
 
 // Configurações para o ícone do marcador
 const DefaultIcon = L.icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png', // URL do ícone do marcador padrão
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png', // URL da sombra do ícone do marcador
-  iconSize: [25, 41], // Tamanho do ícone
-  iconAnchor: [12, 41], // Ponto de ancoragem
-  popupAnchor: [1, -34], // Ponto de ancoragem do popup
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
 });
 
-// Define o tipo para a posição
 type Position = [number, number];
 
 const AddTrailPage = () => {
-  const { data: session } = useSession(); // Obtendo a sessão
-  const user = session?.user; // Acessando os dados do usuário da sessão
+  const { data: session } = useSession();
+  const user = session?.user;
 
+  const [position, setPosition] = useState<Position | null>(null);
+  const [previousPosition, setPreviousPosition] = useState<Position | null>(null);
+  const [isTracking, setIsTracking] = useState<boolean>(false);
+  const [isFormVisible, setIsFormVisible] = useState<boolean>(false); // Controle para o formulário
   const [trailData, setTrailData] = useState({
     name: '',
     difficulty: '',
-    distance: 0,
-    rating: 0,
+    description: '',
     photo: '',
   });
-  const [position, setPosition] = useState<Position | null>(null); // Posição do usuário
+
+  const [elapsedTime, setElapsedTime] = useState<number>(0); // Tempo decorrido
+  const [totalDistance, setTotalDistance] = useState<number>(0); // Distância percorrida
+  const [averageSpeed, setAverageSpeed] = useState<number>(0); // Velocidade média
+
+  // Função para calcular a distância entre dois pontos usando a fórmula de Haversine
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371e3; // Raio da Terra em metros
+    const φ1 = lat1 * (Math.PI / 180); // Convertendo para radianos
+    const φ2 = lat2 * (Math.PI / 180);
+    const Δφ = (lat2 - lat1) * (Math.PI / 180);
+    const Δλ = (lon2 - lon1) * (Math.PI / 180);
+
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) *
+      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Retorna a distância em metros
+  };
 
   // Função para obter a localização do usuário
   const fetchUserLocation = () => {
@@ -41,34 +64,86 @@ const AddTrailPage = () => {
         setPosition([latitude, longitude]);
       },
       (error) => {
-        console.error("Erro ao obter a localização:", error); // Tipo de erro
-      }
+        console.error("Erro ao obter a localização:", error);
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
     );
   };
 
   useEffect(() => {
-    fetchUserLocation(); // Obtém a localização ao carregar a página
+    fetchUserLocation();
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
+        
+        if (previousPosition) {
+          const distance = calculateDistance(
+            previousPosition[0],
+            previousPosition[1],
+            latitude,
+            longitude
+          );
+          setTotalDistance(prevDistance => prevDistance + distance);
+          setAverageSpeed((totalDistance / 1000) / (elapsedTime / 3600)); // Velocidade média em km/h
+        }
+        
+        setPreviousPosition([latitude, longitude]); // Atualiza a posição anterior
         setPosition([latitude, longitude]);
       },
       (error) => {
-        console.error("Erro ao obter a localização:", error); // Tipo de erro
-      }
+        console.error("Erro ao obter a localização:", error);
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
     );
 
     return () => {
-      navigator.geolocation.clearWatch(watchId); // Limpa o watch ao desmontar
+      navigator.geolocation.clearWatch(watchId);
     };
-  }, []);
+  }, [previousPosition, elapsedTime, totalDistance]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isTracking) {
+      timer = setInterval(() => {
+        setElapsedTime(prev => prev + 1); // Incrementa o tempo a cada segundo
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [isTracking]);
+
+  const handleStart = () => {
+    setIsTracking(true);
+    setElapsedTime(0); // Reinicia o tempo ao iniciar
+    setTotalDistance(0); // Reinicia a distância
+    setAverageSpeed(0); // Reinicia a velocidade média
+  };
+
+  const handlePause = () => {
+    setIsTracking(false);
+  };
+
+  const handleFinish = () => {
+    setIsTracking(false);
+    setIsFormVisible(true); // Exibe o formulário ao finalizar a trilha
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setTrailData((prev) => ({
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTrailData((prev) => ({ ...prev, photo: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -83,115 +158,122 @@ const AddTrailPage = () => {
     });
 
     if (response.ok) {
-      alert('Trilha adicionada com sucesso!');
-      // Redirecionar ou realizar outra ação
+      alert('Atividade salva com sucesso!');
+      setIsFormVisible(false); // Oculta o formulário após o envio
     } else {
-      alert('Erro ao adicionar a trilha.');
+      alert('Erro ao salvar a atividade.');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <main className="container mx-auto my-8">
-        <div className="flex items-center space-x-4 mb-8">
-          <Image
-            src={logo}
-            alt="Logo"
-            width={100}
-            height={100}
-            className="rounded-full"
-          />
-          <h2 className="text-4xl font-bold">Adicionar Nova Trilha</h2>
-        </div>
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col relative">
+      {/* Top Bar */}
+      <div className="w-full bg-black text-white flex items-center justify-between p-4">
+        <FontAwesomeIcon icon={faTimes} className="text-white text-xl" />
+        <h2 className="text-2xl font-bold">Trail Run</h2>
+        <FontAwesomeIcon icon={faCog} className="text-white text-xl" />
+      </div>
 
-        {/* Mapa para mostrar a localização */}
-        {position && ( // Verifica se a posição do usuário foi definida
-          <MapContainer center={position} zoom={13} className="h-64 mb-4">
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <Marker position={position} icon={DefaultIcon}>
-              <Popup>Você está aqui</Popup>
-            </Marker>
-          </MapContainer>
+      {/* Mapa */}
+      {position && (
+        <MapContainer center={position} zoom={13} className="h-64 mb-4 rounded-lg shadow-lg">
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <Marker position={position} icon={DefaultIcon}>
+            <Popup>Você está aqui</Popup>
+          </Marker>
+        </MapContainer>
+      )}
+
+      {/* Controles Principais e Métricas */}
+      <div className="absolute bottom-0 w-full flex flex-col items-center justify-between bg-gray-900 p-4 space-y-4">
+        {!isFormVisible ? (
+          <>
+            {/* Métricas */}
+            <div className="text-center text-white">
+              <h3 className="text-lg">Tempo Percorrido: {Math.floor(elapsedTime / 60)}:{('0' + (elapsedTime % 60)).slice(-2)}</h3>
+              <h3 className="text-lg">Distância Percorrida: {(totalDistance / 1000).toFixed(2)} km</h3>
+              <h3 className="text-lg">Velocidade Média: {averageSpeed.toFixed(2)} km/h</h3>
+            </div>
+
+            {/* Controles Principais */}
+            <div className="flex space-x-4">
+              <button onClick={handleStart} className="bg-orange-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16">
+                <FontAwesomeIcon icon={faPlay} className="text-2xl" />
+              </button>
+              <button onClick={handlePause} className="bg-yellow-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16">
+                <FontAwesomeIcon icon={faPause} className="text-2xl" />
+              </button>
+              <button onClick={handleFinish} className="bg-red-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16">
+                <FontAwesomeIcon icon={faStop} className="text-2xl" />
+              </button>
+            </div>
+          </>
+        ) : (
+          /* Formulário de Finalização */
+          <form onSubmit={handleSubmit} className="bg-gray-800 p-4 rounded-lg shadow-lg w-full max-w-lg">
+            <div className="mb-4">
+              <label htmlFor="name" className="block text-lg font-medium">Nome da Atividade</label>
+              <input
+                type="text"
+                name="name"
+                id="name"
+                value={trailData.name}
+                onChange={handleChange}
+                required
+                className="mt-1 block w-full p-2 bg-gray-900 border border-gray-700 rounded"
+                placeholder="Digite o nome da atividade"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="description" className="block text-lg font-medium">Como foi?</label>
+              <textarea
+                name="description"
+                id="description"
+                value={trailData.description}
+                onChange={handleChange}
+                rows={3}
+                className="mt-1 block w-full p-2 bg-gray-900 border border-gray-700 rounded"
+                placeholder="Compartilhe detalhes da sua atividade"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="difficulty" className="block text-lg font-medium">Dificuldade</label>
+              <select
+                name="difficulty"
+                id="difficulty"
+                value={trailData.difficulty}
+                onChange={handleChange}
+                required
+                className="mt-1 block w-full p-2 bg-gray-900 border border-gray-700 rounded"
+              >
+                <option value="">Selecione a dificuldade</option>
+                <option value="fácil">Fácil</option>
+                <option value="moderada">Moderada</option>
+                <option value="difícil">Difícil</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="photo" className="block text-lg font-medium">Adicionar Fotos/Vídeos</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="mt-1 block w-full p-2 bg-gray-900 border border-gray-700 rounded"
+              />
+              {trailData.photo && (
+                <img src={trailData.photo} alt="Preview" className="mt-2 w-full h-auto rounded" />
+              )}
+            </div>
+
+            <button type="submit" className="bg-orange-600 text-white p-3 rounded-full w-full hover:bg-orange-700">
+              Salvar Atividade
+            </button>
+          </form>
         )}
-
-        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md">
-          <div className="mb-4">
-            <label htmlFor="name" className="block text-lg font-medium">Nome da Trilha:</label>
-            <input
-              type="text"
-              name="name"
-              id="name"
-              value={trailData.name}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="difficulty" className="block text-lg font-medium">Dificuldade:</label>
-            <select
-              name="difficulty"
-              id="difficulty"
-              value={trailData.difficulty}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
-            >
-              <option value="">Escolha uma dificuldade</option>
-              <option value="fácil">Fácil</option>
-              <option value="moderada">Moderada</option>
-              <option value="difícil">Difícil</option>
-            </select>
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="distance" className="block text-lg font-medium">Distância (km):</label>
-            <input
-              type="number"
-              name="distance"
-              id="distance"
-              value={trailData.distance}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="rating" className="block text-lg font-medium">Avaliação:</label>
-            <input
-              type="number"
-              name="rating"
-              id="rating"
-              value={trailData.rating}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
-              min={0}
-              max={5}
-            />
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="photo" className="block text-lg font-medium">URL da Imagem:</label>
-            <input
-              type="text"
-              name="photo"
-              id="photo"
-              value={trailData.photo}
-              onChange={handleChange}
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
-            />
-          </div>
-
-          <button type="submit" className="bg-green-600 text-white p-2 rounded-full hover:bg-green-700">
-            Adicionar Trilha
-          </button>
-        </form>
-      </main>
+      </div>
     </div>
   );
 };
