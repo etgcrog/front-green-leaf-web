@@ -3,11 +3,11 @@
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useSession } from "next-auth/react";
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlay, faPause, faRedo, faStop, faTimes, faCog, faImage } from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faPause, faRedo, faStop, faTimes, faCog } from '@fortawesome/free-solid-svg-icons';
 
 // Configurações para o ícone do marcador
 const DefaultIcon = L.icon({
@@ -19,6 +19,17 @@ const DefaultIcon = L.icon({
 });
 
 type Position = [number, number];
+
+// Componente para centralizar o mapa com base na posição do usuário
+function MapCenter({ position }: { position: Position }) {
+  const map = useMap();
+  useEffect(() => {
+    if (position) {
+      map.setView(position, 15); // Ajusta o zoom e centraliza
+    }
+  }, [position, map]);
+  return null;
+}
 
 const AddTrailPage = () => {
   const { data: session } = useSession();
@@ -148,7 +159,7 @@ const AddTrailPage = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     const response = await fetch('/api/trails', {
       method: 'POST',
       headers: {
@@ -176,11 +187,12 @@ const AddTrailPage = () => {
 
       {/* Mapa */}
       {position && (
-        <MapContainer center={position} zoom={13} className="h-64 mb-4 rounded-lg shadow-lg">
+        <MapContainer center={position} zoom={15} className="h-72 mb-4 rounded-lg shadow-lg">
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <Marker position={position} icon={DefaultIcon}>
             <Popup>Você está aqui</Popup>
           </Marker>
+          <MapCenter position={position} />
         </MapContainer>
       )}
 
@@ -189,7 +201,7 @@ const AddTrailPage = () => {
         {!isFormVisible ? (
           <>
             {/* Métricas */}
-            <div className="text-center text-white">
+            <div className="text-center text-white mb-4">
               <h3 className="text-lg">Tempo Percorrido: {Math.floor(elapsedTime / 60)}:{('0' + (elapsedTime % 60)).slice(-2)}</h3>
               <h3 className="text-lg">Distância Percorrida: {(totalDistance / 1000).toFixed(2)} km</h3>
               <h3 className="text-lg">Velocidade Média: {averageSpeed.toFixed(2)} km/h</h3>
@@ -197,13 +209,13 @@ const AddTrailPage = () => {
 
             {/* Controles Principais */}
             <div className="flex space-x-4">
-              <button onClick={handleStart} className="bg-orange-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16">
+              <button onClick={handleStart} className="border-2 border-orange-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16 hover:bg-orange-600 transition-all">
                 <FontAwesomeIcon icon={faPlay} className="text-2xl" />
               </button>
-              <button onClick={handlePause} className="bg-yellow-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16">
+              <button onClick={handlePause} className="border-2 border-yellow-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16 hover:bg-yellow-600 transition-all">
                 <FontAwesomeIcon icon={faPause} className="text-2xl" />
               </button>
-              <button onClick={handleFinish} className="bg-red-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16">
+              <button onClick={handleFinish} className="border-2 border-red-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16 hover:bg-red-600 transition-all">
                 <FontAwesomeIcon icon={faStop} className="text-2xl" />
               </button>
             </div>
