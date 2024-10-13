@@ -1,23 +1,26 @@
-import Image from "next/image";
-import logo from "@/assets/images/logoBg.png";
+"use client"
 import Link from "next/link";
-import { Button } from "../ui/button";
+
 export default function Header() {
-    return(
-        <header className="h-[8vh] pl-3 pr-3 flex flex-row items-center">
-            <div className="w-12">
-                <Image src={logo} alt="Logo" layout="responsive"></Image>
+    return (
+        <header className="bg-[#2E4600] shadow-[0_4px_8px_rgba(139,69,19,0.5),0_6px_20px_rgba(139,69,19,0.3)] p-6 w-full border-b-2 border-[#8B4513] fixed top-0 left-0 z-50">
+            <div className="flex justify-between items-center px-4">
+                {/* Nome "Green Leaf Trail" com fonte Poppins */}
+                <Link href="/">
+                    <h1 className="text-4xl font-bold text-white" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                        Green Leaf Trail
+                    </h1>
+                </Link>
+
+                {/* Menu de navegação alinhado à direita */}
+                <nav className="space-x-4 text-lg font-medium text-white flex items-center" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                    <Link href="/shopping" className="hover:text-[#BDB76B] transition duration-300">Shopping</Link>
+                    <Link href="/news" className="hover:text-[#BDB76B] transition duration-300">Novidades</Link>
+                    <Link href="/about" className="hover:text-[#BDB76B] transition duration-300">Quem somos?</Link>
+                    <Link href="/portfolio" className="hover:text-[#BDB76B] transition duration-300">Portfólio</Link>
+                    <Link href="/trails" className="bg-[#4CBB17] text-white px-4 py-2 rounded-full hover:bg-[#6B8E23] transition duration-300">Trilhas</Link>
+                </nav>
             </div>
-            
-            <h1 className="text-[#426B1F] font-medium font-sans text-2xl pl-4">Green Leaf Trail</h1>
-            <div className="flex items-end ml-auto space-x-4">
-                <Link href={"/shopping"}>Shopping</Link>
-                <Link href={"/novidades"}>Novidades</Link>
-                <Link href={"/quem-somos"}>Quem somos?</Link>
-                <Link href={"/perfil"}>Perfil</Link>
-                
-            </div>
-            <Button className="bg-[#426B1F] text-white ml-5 hover:bg-emerald-900 rounded-3xl">Trilhas</Button>
         </header>
-    )
+    );
 }
