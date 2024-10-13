@@ -32,12 +32,8 @@ export default function Home() {
                     const data = await response.json();
                     console.log("Trilhas recebidas:", data); // Verifica os dados recebidos da API
 
-                    // Verifica a estrutura do objeto data
-                    if (data.data) {
-                        setTrails(data.data); // Acessa a propriedade data que contém as trilhas
-                    } else {
-                        console.error("Dados de trilhas não encontrados na resposta:", data);
-                    }
+                    // Ajuste aqui: não há propriedade 'data' na resposta
+                    setTrails(data); // Acessa diretamente o array de trilhas
                     
                     setLoading(false);
                 } catch (error) {
