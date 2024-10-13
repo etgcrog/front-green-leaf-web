@@ -10,8 +10,8 @@ declare module "next-auth" {
       token?: string;
       refreshToken?: string;
       profilePicture?: string;
-      id?: string; // Adicione o ID do usuário
-      [key: string]: any; // Para outras propriedades dinâmicas
+      id?: string;
+      [key: string]: any;
     } & DefaultSession["user"];
   }
 }
@@ -43,13 +43,10 @@ export const authOptions: NextAuthOptions = {
 
         const user = await res.json();
 
-        // Adicione este log para ver a resposta do usuário
-        console.log("Resposta do usuário:", user); // Verifique o que está retornando
-
         if (res.ok && user) {
           return {
             ...user,
-            id: user.id, // Certifique-se de que o ID do usuário está sendo retornado
+            id: user.id,
           };
         }
 

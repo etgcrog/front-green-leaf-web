@@ -1,13 +1,14 @@
 "use client";
 
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useSession } from "next-auth/react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.locatecontrol/dist/L.Control.Locate.min.css'; // Importa o CSS do locate control
+import 'leaflet.locatecontrol'; // Importa o JavaScript do locate control
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlay, faPause, faRedo, faStop, faTimes, faCog } from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faPause, faStop, faCog, faTimes } from '@fortawesome/free-solid-svg-icons';
 
 // Configurações para o ícone do marcador
 const DefaultIcon = L.icon({
@@ -20,16 +21,47 @@ const DefaultIcon = L.icon({
 
 type Position = [number, number];
 
-// Componente para centralizar o mapa com base na posição do usuário
-function MapCenter({ position }: { position: Position }) {
+// Componente para adicionar o botão de localização no mapa
+const LocateControl = () => {
   const map = useMap();
+
   useEffect(() => {
-    if (position) {
-      map.setView(position, 15); // Ajusta o zoom e centraliza
-    }
-  }, [position, map]);
+    const locateControl = (L.control as any).locate({
+      position: 'topright',
+      flyTo: true,
+      showPopup: false,
+      strings: {
+        title: "Voltar para a localização atual"
+      },
+      locateOptions: {
+        enableHighAccuracy: true
+      }
+    }).addTo(map);
+
+    return () => {
+      locateControl.remove();
+    };
+  }, [map]);
+
   return null;
-}
+};
+
+// Função para calcular a distância entre dois pontos
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371e3; // Raio da Terra em metros
+  const φ1 = lat1 * (Math.PI / 180); // Convertendo para radianos
+  const φ2 = lat2 * (Math.PI / 180);
+  const Δφ = (lat2 - lat1) * (Math.PI / 180);
+  const Δλ = (lon2 - lon1) * (Math.PI / 180);
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) *
+    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c; // Retorna a distância em metros
+};
 
 const AddTrailPage = () => {
   const { data: session } = useSession();
@@ -38,7 +70,7 @@ const AddTrailPage = () => {
   const [position, setPosition] = useState<Position | null>(null);
   const [previousPosition, setPreviousPosition] = useState<Position | null>(null);
   const [isTracking, setIsTracking] = useState<boolean>(false);
-  const [isFormVisible, setIsFormVisible] = useState<boolean>(false); // Controle para o formulário
+  const [isFormVisible, setIsFormVisible] = useState<boolean>(false);
   const [trailData, setTrailData] = useState({
     name: '',
     difficulty: '',
@@ -46,26 +78,9 @@ const AddTrailPage = () => {
     photo: '',
   });
 
-  const [elapsedTime, setElapsedTime] = useState<number>(0); // Tempo decorrido
-  const [totalDistance, setTotalDistance] = useState<number>(0); // Distância percorrida
-  const [averageSpeed, setAverageSpeed] = useState<number>(0); // Velocidade média
-
-  // Função para calcular a distância entre dois pontos usando a fórmula de Haversine
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371e3; // Raio da Terra em metros
-    const φ1 = lat1 * (Math.PI / 180); // Convertendo para radianos
-    const φ2 = lat2 * (Math.PI / 180);
-    const Δφ = (lat2 - lat1) * (Math.PI / 180);
-    const Δλ = (lon2 - lon1) * (Math.PI / 180);
-
-    const a =
-      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-      Math.cos(φ1) * Math.cos(φ2) *
-      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c; // Retorna a distância em metros
-  };
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [totalDistance, setTotalDistance] = useState<number>(0);
+  const [averageSpeed, setAverageSpeed] = useState<number>(0);
 
   // Função para obter a localização do usuário
   const fetchUserLocation = () => {
@@ -95,10 +110,10 @@ const AddTrailPage = () => {
             longitude
           );
           setTotalDistance(prevDistance => prevDistance + distance);
-          setAverageSpeed((totalDistance / 1000) / (elapsedTime / 3600)); // Velocidade média em km/h
+          setAverageSpeed((totalDistance / 1000) / (elapsedTime / 3600));
         }
         
-        setPreviousPosition([latitude, longitude]); // Atualiza a posição anterior
+        setPreviousPosition([latitude, longitude]);
         setPosition([latitude, longitude]);
       },
       (error) => {
@@ -116,7 +131,7 @@ const AddTrailPage = () => {
     let timer: NodeJS.Timeout;
     if (isTracking) {
       timer = setInterval(() => {
-        setElapsedTime(prev => prev + 1); // Incrementa o tempo a cada segundo
+        setElapsedTime(prev => prev + 1);
       }, 1000);
     }
     return () => clearInterval(timer);
@@ -124,9 +139,9 @@ const AddTrailPage = () => {
 
   const handleStart = () => {
     setIsTracking(true);
-    setElapsedTime(0); // Reinicia o tempo ao iniciar
-    setTotalDistance(0); // Reinicia a distância
-    setAverageSpeed(0); // Reinicia a velocidade média
+    setElapsedTime(0);
+    setTotalDistance(0);
+    setAverageSpeed(0);
   };
 
   const handlePause = () => {
@@ -135,7 +150,7 @@ const AddTrailPage = () => {
 
   const handleFinish = () => {
     setIsTracking(false);
-    setIsFormVisible(true); // Exibe o formulário ao finalizar a trilha
+    setIsFormVisible(true);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -159,7 +174,7 @@ const AddTrailPage = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
+    
     const response = await fetch('/api/trails', {
       method: 'POST',
       headers: {
@@ -170,7 +185,7 @@ const AddTrailPage = () => {
 
     if (response.ok) {
       alert('Atividade salva com sucesso!');
-      setIsFormVisible(false); // Oculta o formulário após o envio
+      setIsFormVisible(false);
     } else {
       alert('Erro ao salvar a atividade.');
     }
@@ -187,12 +202,12 @@ const AddTrailPage = () => {
 
       {/* Mapa */}
       {position && (
-        <MapContainer center={position} zoom={15} className="h-72 mb-4 rounded-lg shadow-lg">
+        <MapContainer center={position} zoom={13} className="h-64 mb-4 rounded-lg shadow-lg">
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <Marker position={position} icon={DefaultIcon}>
             <Popup>Você está aqui</Popup>
           </Marker>
-          <MapCenter position={position} />
+          <LocateControl /> {/* Adiciona o botão de localização no mapa */}
         </MapContainer>
       )}
 
@@ -201,7 +216,7 @@ const AddTrailPage = () => {
         {!isFormVisible ? (
           <>
             {/* Métricas */}
-            <div className="text-center text-white mb-4">
+            <div className="text-center text-white">
               <h3 className="text-lg">Tempo Percorrido: {Math.floor(elapsedTime / 60)}:{('0' + (elapsedTime % 60)).slice(-2)}</h3>
               <h3 className="text-lg">Distância Percorrida: {(totalDistance / 1000).toFixed(2)} km</h3>
               <h3 className="text-lg">Velocidade Média: {averageSpeed.toFixed(2)} km/h</h3>
@@ -209,13 +224,13 @@ const AddTrailPage = () => {
 
             {/* Controles Principais */}
             <div className="flex space-x-4">
-              <button onClick={handleStart} className="border-2 border-orange-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16 hover:bg-orange-600 transition-all">
+              <button onClick={handleStart} className="bg-orange-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16">
                 <FontAwesomeIcon icon={faPlay} className="text-2xl" />
               </button>
-              <button onClick={handlePause} className="border-2 border-yellow-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16 hover:bg-yellow-600 transition-all">
+              <button onClick={handlePause} className="bg-yellow-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16">
                 <FontAwesomeIcon icon={faPause} className="text-2xl" />
               </button>
-              <button onClick={handleFinish} className="border-2 border-red-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16 hover:bg-red-600 transition-all">
+              <button onClick={handleFinish} className="bg-red-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16">
                 <FontAwesomeIcon icon={faStop} className="text-2xl" />
               </button>
             </div>
