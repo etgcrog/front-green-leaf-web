@@ -24,14 +24,11 @@ interface Trail {
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    console.log("Sessão no backend:", session);
 
     if (!session || !session.user || !session.user.token) {
       console.log("Sessão não encontrada ou token ausente");
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-
-    console.log("Token encontrado na sessão no backend:", session.user.token);
 
     const apiUrlTrails = `${GetDotenvVariable("ENVIROMENT")}/trails`; // URL das trilhas
 
@@ -49,17 +46,13 @@ export async function GET() {
     }
 
     const trailsData = await trailsResponse.json();
-    console.log("Trilhas recebidas da API:", trailsData);
 
-    // Combinar trilhas com dados dos usuários já inclusos
     const trailsWithAuthors = trailsData.data.map((trail: Trail) => {
       return {
         ...trail,
         author: trail.createdBy ? `${trail.createdBy.firstName} ${trail.createdBy.lastName}` : 'Autor Desconhecido', // Concatenar o nome e sobrenome
       };
     });
-
-    console.log("Trilhas com autores:", trailsWithAuthors); // Verifica os dados finais das trilhas
 
     return NextResponse.json(trailsWithAuthors, { status: 200 });
   } catch (error) {

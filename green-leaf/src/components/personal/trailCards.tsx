@@ -1,7 +1,7 @@
 "use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import Image from "next/image";
-import { redirect } from "next/navigation";
+import { useRouter } from 'next/navigation'; // Importando useRouter
 import { FaShareAlt, FaStar, FaBookmark } from "react-icons/fa"; // Importando ícones
 
 // Definindo a interface para os dados da trilha
@@ -16,8 +16,11 @@ interface Trail {
 }
 
 export default function TrailCard({ trail }: { trail: Trail }) {
+  const router = useRouter(); // Hook para manipular o roteamento
+
   const handleRedirect = () => {
-    redirect(`/trails/${trail.id}`); // Redireciona para a página de detalhes da trilha
+    console.log("Redirecionando para:", `/trail/details/${trail.id}`);
+    router.push(`/trail/details/${trail.id}`); // Redireciona para a página de detalhes da trilha
   };
 
   // Classificação fixa em 4.3

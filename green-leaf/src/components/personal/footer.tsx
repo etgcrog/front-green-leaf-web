@@ -1,6 +1,5 @@
-"use client"
-import { FaLinkedin, FaInstagram, FaWhatsapp, FaFacebook } from 'react-icons/fa';
-import Image from "next/image";
+"use client";
+import { FaLinkedin, FaInstagram, FaWhatsapp, FaFacebook, FaApple, FaGooglePlay } from 'react-icons/fa';
 import Link from "next/link";
 
 export default function Footer() {
@@ -15,9 +14,17 @@ export default function Footer() {
                         <FaWhatsapp className="text-gray-700 hover:text-green-600 cursor-pointer" size={24} />
                         <FaFacebook className="text-gray-700 hover:text-green-600 cursor-pointer" size={24} />
                     </div>
-                    <div className="flex space-x-4">
-                        <Image src="/app-store.png" alt="App Store" width={120} height={40} />
-                        <Image src="/google-play.png" alt="Google Play" width={120} height={40} />
+                    <div className="flex space-x-8">
+                        {/* Ícone e Nome da App Store */}
+                        <div className="flex items-center space-x-2">
+                            <FaApple className="text-gray-700 hover:text-green-600 cursor-pointer" size={24} />
+                            <span className="text-gray-700 hover:text-green-600 cursor-pointer">App Store</span>
+                        </div>
+                        {/* Ícone e Nome do Google Play */}
+                        <div className="flex items-center space-x-2">
+                            <FaGooglePlay className="text-gray-700 hover:text-green-600 cursor-pointer" size={24} />
+                            <span className="text-gray-700 hover:text-green-600 cursor-pointer">Google Play</span>
+                        </div>
                     </div>
                 </div>
 

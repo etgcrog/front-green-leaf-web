@@ -10,12 +10,11 @@ declare module "next-auth" {
       token?: string;
       refreshToken?: string;
       profilePicture?: string;
-      [key: string]: any; // Para outras propriedades dinâmicas
+      id?: string;
+      [key: string]: any;
     } & DefaultSession["user"];
   }
 }
-
-console.log("Iniciando configuração do NextAuth");
 
 export const authOptions: NextAuthOptions = {
   pages: {
@@ -29,7 +28,6 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        console.log("Autenticando o usuário...");
         const authDTO = {
           email: credentials?.email,
           password: credentials?.password,
@@ -44,31 +42,25 @@ export const authOptions: NextAuthOptions = {
         );
 
         const user = await res.json();
-        console.log("Resposta da API de autenticação:", user); // Verifica a resposta completa da API
 
         if (res.ok && user) {
-          console.log("Usuário autenticado:", user);
-          return user; // Retorna o objeto `user`, que deve conter o token
+          return {
+            ...user,
+            id: user.id,
+          };
         }
 
-        console.log("Falha na autenticação");
         return null;
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }: { token: JWT; user: any }) {
-      console.log("Callback jwt chamado");
-
       if (user) {
-        console.log("Usuário no callback jwt:", user);
-
-        // Pega o token correto do objeto `tokens`
         token.token = user.tokens.access_token; // Atribui o access_token
         token.refreshToken = user.tokens.refresh_token; // Atribui o refresh_token
         token.profilePicture = user.profilePicture; // Pega a imagem de perfil
-
-        console.log("Token no callback jwt:", token.token);
+        token.id = user.id; // Adiciona o ID do usuário ao token
       }
       return token;
     },
@@ -79,14 +71,11 @@ export const authOptions: NextAuthOptions = {
       session: Session;
       token: JWT;
     }): Promise<Session> {
-      console.log("Callback session chamado");
-
-      // Pega o token do JWT e adiciona à sessão
       session.user.token = token.token as string | undefined;
       session.user.refreshToken = token.refreshToken as string | undefined;
       session.user.profilePicture = token.profilePicture as string | undefined;
+      session.user.id = token.id as string | undefined; // Adiciona o ID à sessão
 
-      console.log("Token no callback session:", session.user);
       return session;
     },
   },
