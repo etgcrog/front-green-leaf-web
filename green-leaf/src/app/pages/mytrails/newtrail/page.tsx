@@ -5,12 +5,11 @@ import { useSession } from "next-auth/react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import 'leaflet.locatecontrol/dist/L.Control.Locate.min.css'; // Importa o CSS do locate control
-import 'leaflet.locatecontrol'; // Importa o JavaScript do locate control
+import 'leaflet.locatecontrol/dist/L.Control.Locate.min.css'; 
+import 'leaflet.locatecontrol'; 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlay, faPause, faStop, faCog, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faPause, faStop, faMapMarkerAlt, faCog, faTimes } from '@fortawesome/free-solid-svg-icons';
 
-// Configurações para o ícone do marcador
 const DefaultIcon = L.icon({
   iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
@@ -21,7 +20,6 @@ const DefaultIcon = L.icon({
 
 type Position = [number, number];
 
-// Componente para adicionar o botão de localização no mapa
 const LocateControl = () => {
   const map = useMap();
 
@@ -46,10 +44,9 @@ const LocateControl = () => {
   return null;
 };
 
-// Função para calcular a distância entre dois pontos
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const R = 6371e3; // Raio da Terra em metros
-  const φ1 = lat1 * (Math.PI / 180); // Convertendo para radianos
+  const R = 6371e3;
+  const φ1 = lat1 * (Math.PI / 180);
   const φ2 = lat2 * (Math.PI / 180);
   const Δφ = (lat2 - lat1) * (Math.PI / 180);
   const Δλ = (lon2 - lon1) * (Math.PI / 180);
@@ -60,7 +57,7 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
     Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-  return R * c; // Retorna a distância em metros
+  return R * c;
 };
 
 const AddTrailPage = () => {
@@ -71,6 +68,7 @@ const AddTrailPage = () => {
   const [previousPosition, setPreviousPosition] = useState<Position | null>(null);
   const [isTracking, setIsTracking] = useState<boolean>(false);
   const [isFormVisible, setIsFormVisible] = useState<boolean>(false);
+  const [isMapVisible, setIsMapVisible] = useState<boolean>(true);
   const [trailData, setTrailData] = useState({
     name: '',
     difficulty: '',
@@ -82,7 +80,6 @@ const AddTrailPage = () => {
   const [totalDistance, setTotalDistance] = useState<number>(0);
   const [averageSpeed, setAverageSpeed] = useState<number>(0);
 
-  // Função para obter a localização do usuário
   const fetchUserLocation = () => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -142,6 +139,7 @@ const AddTrailPage = () => {
     setElapsedTime(0);
     setTotalDistance(0);
     setAverageSpeed(0);
+    setIsMapVisible(false);
   };
 
   const handlePause = () => {
@@ -151,6 +149,17 @@ const AddTrailPage = () => {
   const handleFinish = () => {
     setIsTracking(false);
     setIsFormVisible(true);
+    setIsMapVisible(false); // Esconde o mapa para mostrar apenas o formulário de conclusão
+  };
+
+  const handleDiscard = () => {
+    // Reset everything and go back to the initial map view
+    setIsTracking(false);
+    setElapsedTime(0);
+    setTotalDistance(0);
+    setAverageSpeed(0);
+    setIsMapVisible(true);
+    setIsFormVisible(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -193,36 +202,44 @@ const AddTrailPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col relative">
-      {/* Top Bar */}
       <div className="w-full bg-black text-white flex items-center justify-between p-4">
         <FontAwesomeIcon icon={faTimes} className="text-white text-xl" />
         <h2 className="text-2xl font-bold">Trail Run</h2>
-        <FontAwesomeIcon icon={faCog} className="text-white text-xl" />
+        <FontAwesomeIcon icon={faMapMarkerAlt} className="text-white text-xl" onClick={() => setIsMapVisible(true)} />
       </div>
 
-      {/* Mapa */}
-      {position && (
+      {/* Mapa (só aparece antes de iniciar e ao clicar no ícone de voltar) */}
+      {isMapVisible && position && (
         <MapContainer center={position} zoom={13} className="h-64 mb-4 rounded-lg shadow-lg">
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <Marker position={position} icon={DefaultIcon}>
             <Popup>Você está aqui</Popup>
           </Marker>
-          <LocateControl /> {/* Adiciona o botão de localização no mapa */}
+          <LocateControl />
         </MapContainer>
       )}
 
-      {/* Controles Principais e Métricas */}
-      <div className="absolute bottom-0 w-full flex flex-col items-center justify-between bg-gray-900 p-4 space-y-4">
+      {/* Conteúdo ajustável e responsivo */}
+      <div className="flex flex-col items-center justify-between bg-gray-900 p-4 space-y-4 flex-grow">
         {!isFormVisible ? (
           <>
-            {/* Métricas */}
-            <div className="text-center text-white">
-              <h3 className="text-lg">Tempo Percorrido: {Math.floor(elapsedTime / 60)}:{('0' + (elapsedTime % 60)).slice(-2)}</h3>
-              <h3 className="text-lg">Distância Percorrida: {(totalDistance / 1000).toFixed(2)} km</h3>
-              <h3 className="text-lg">Velocidade Média: {averageSpeed.toFixed(2)} km/h</h3>
+            {/* Métricas em colunas com divisórias */}
+            <div className="grid grid-cols-3 gap-4 text-center text-white divide-x divide-gray-600">
+              <div>
+                <h3 className="text-lg">Tempo Percorrido</h3>
+                <p>{Math.floor(elapsedTime / 60)}:{('0' + (elapsedTime % 60)).slice(-2)}</p>
+              </div>
+              <div>
+                <h3 className="text-lg">Distância</h3>
+                <p>{(totalDistance / 1000).toFixed(2)} km</p>
+              </div>
+              <div>
+                <h3 className="text-lg">Velocidade Média</h3>
+                <p>{averageSpeed.toFixed(2)} km/h</p>
+              </div>
             </div>
 
-            {/* Controles Principais */}
+            {/* Controles */}
             <div className="flex space-x-4">
               <button onClick={handleStart} className="bg-orange-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16">
                 <FontAwesomeIcon icon={faPlay} className="text-2xl" />
@@ -236,7 +253,6 @@ const AddTrailPage = () => {
             </div>
           </>
         ) : (
-          /* Formulário de Finalização */
           <form onSubmit={handleSubmit} className="bg-gray-800 p-4 rounded-lg shadow-lg w-full max-w-lg">
             <div className="mb-4">
               <label htmlFor="name" className="block text-lg font-medium">Nome da Atividade</label>
@@ -248,7 +264,6 @@ const AddTrailPage = () => {
                 onChange={handleChange}
                 required
                 className="mt-1 block w-full p-2 bg-gray-900 border border-gray-700 rounded"
-                placeholder="Digite o nome da atividade"
               />
             </div>
 
@@ -261,7 +276,6 @@ const AddTrailPage = () => {
                 onChange={handleChange}
                 rows={3}
                 className="mt-1 block w-full p-2 bg-gray-900 border border-gray-700 rounded"
-                placeholder="Compartilhe detalhes da sua atividade"
               />
             </div>
 
@@ -295,9 +309,15 @@ const AddTrailPage = () => {
               )}
             </div>
 
-            <button type="submit" className="bg-orange-600 text-white p-3 rounded-full w-full hover:bg-orange-700">
-              Salvar Atividade
-            </button>
+            {/* Opções de salvar e descartar */}
+            <div className="flex justify-between mt-6">
+              <button type="button" onClick={handleDiscard} className="bg-red-600 text-white p-3 rounded-full w-1/2 mr-2 hover:bg-red-700">
+                Descartar Atividade
+              </button>
+              <button type="submit" className="bg-orange-600 text-white p-3 rounded-full w-1/2 hover:bg-orange-700">
+                Salvar Atividade
+              </button>
+            </div>
           </form>
         )}
       </div>
