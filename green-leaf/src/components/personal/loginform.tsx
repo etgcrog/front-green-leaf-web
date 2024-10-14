@@ -23,7 +23,7 @@ export default function LoginForm() {
         
         signIn('credentials', {
             ...data,
-            callbackUrl: '/pages/home'
+            callbackUrl: '/home'
         });
     }
 

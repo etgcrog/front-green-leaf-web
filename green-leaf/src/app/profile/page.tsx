@@ -63,7 +63,7 @@ const AccountPage = () => {
 
   // Função para redirecionar para a página de adicionar trilha
   const handleAddTrail = () => {
-    router.push('/pages/mytrails/newtrail'); // Mude o caminho conforme necessário
+    router.push('/mytrails/newtrail'); // Mude o caminho conforme necessário
   };
 
   return (
