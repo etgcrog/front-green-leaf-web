@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useSession } from "next-auth/react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import 'leaflet.locatecontrol/dist/L.Control.Locate.min.css'; 
-import 'leaflet.locatecontrol'; 
+import 'leaflet.locatecontrol/dist/L.Control.Locate.min.css';
+import 'leaflet.locatecontrol';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlay, faPause, faStop, faMapMarkerAlt, faCog, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faPause, faStop, faMapMarkerAlt, faTimes } from '@fortawesome/free-solid-svg-icons';
 
 const DefaultIcon = L.icon({
   iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
@@ -67,6 +67,7 @@ const AddTrailPage = () => {
   const [position, setPosition] = useState<Position | null>(null);
   const [previousPosition, setPreviousPosition] = useState<Position | null>(null);
   const [isTracking, setIsTracking] = useState<boolean>(false);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
   const [isFormVisible, setIsFormVisible] = useState<boolean>(false);
   const [isMapVisible, setIsMapVisible] = useState<boolean>(true);
   const [trailData, setTrailData] = useState({
@@ -79,6 +80,7 @@ const AddTrailPage = () => {
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [totalDistance, setTotalDistance] = useState<number>(0);
   const [averageSpeed, setAverageSpeed] = useState<number>(0);
+  const [averagePace, setAveragePace] = useState<string>('0:00');
 
   const fetchUserLocation = () => {
     navigator.geolocation.getCurrentPosition(
@@ -98,7 +100,7 @@ const AddTrailPage = () => {
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        
+
         if (previousPosition) {
           const distance = calculateDistance(
             previousPosition[0],
@@ -108,8 +110,14 @@ const AddTrailPage = () => {
           );
           setTotalDistance(prevDistance => prevDistance + distance);
           setAverageSpeed((totalDistance / 1000) / (elapsedTime / 3600));
+
+          if (totalDistance > 0) {
+            setAveragePace(`${Math.floor(elapsedTime / (totalDistance / 1000))}:${('0' + Math.floor((elapsedTime % (totalDistance / 1000)))).slice(-2)}`);
+          } else {
+            setAveragePace('0:00');
+          }
         }
-        
+
         setPreviousPosition([latitude, longitude]);
         setPosition([latitude, longitude]);
       },
@@ -126,24 +134,22 @@ const AddTrailPage = () => {
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (isTracking) {
+    if (isTracking && !isPaused) {
       timer = setInterval(() => {
         setElapsedTime(prev => prev + 1);
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [isTracking]);
+  }, [isTracking, isPaused]);
 
   const handleStart = () => {
     setIsTracking(true);
-    setElapsedTime(0);
-    setTotalDistance(0);
-    setAverageSpeed(0);
+    setIsPaused(false);
     setIsMapVisible(false);
   };
 
   const handlePause = () => {
-    setIsTracking(false);
+    setIsPaused(true);
   };
 
   const handleFinish = () => {
@@ -153,7 +159,6 @@ const AddTrailPage = () => {
   };
 
   const handleDiscard = () => {
-    // Reset everything and go back to the initial map view
     setIsTracking(false);
     setElapsedTime(0);
     setTotalDistance(0);
@@ -183,7 +188,7 @@ const AddTrailPage = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     const response = await fetch('/api/trails', {
       method: 'POST',
       headers: {
@@ -208,14 +213,22 @@ const AddTrailPage = () => {
         <FontAwesomeIcon icon={faMapMarkerAlt} className="text-white text-xl" onClick={() => setIsMapVisible(true)} />
       </div>
 
-      {/* Mapa (só aparece antes de iniciar e ao clicar no ícone de voltar) */}
+      {/* Mapa (aparece antes de iniciar e ao clicar no ícone de voltar) */}
       {isMapVisible && position && (
         <MapContainer center={position} zoom={13} className="h-64 mb-4 rounded-lg shadow-lg">
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <LayersControl position="topright">
+            <LayersControl.BaseLayer checked name="OpenStreetMap">
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            </LayersControl.BaseLayer>
+            <LayersControl.BaseLayer name="Mapbox">
+              <TileLayer url="https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}" />
+            </LayersControl.BaseLayer>
+          </LayersControl>
           <Marker position={position} icon={DefaultIcon}>
             <Popup>Você está aqui</Popup>
           </Marker>
           <LocateControl />
+          <ZoomControl position="topright" />
         </MapContainer>
       )}
 
@@ -223,30 +236,37 @@ const AddTrailPage = () => {
       <div className="flex flex-col items-center justify-between bg-gray-900 p-4 space-y-4 flex-grow">
         {!isFormVisible ? (
           <>
-            {/* Métricas em colunas com divisórias */}
-            <div className="grid grid-cols-3 gap-4 text-center text-white divide-x divide-gray-600">
-              <div>
-                <h3 className="text-lg">Tempo Percorrido</h3>
-                <p>{Math.floor(elapsedTime / 60)}:{('0' + (elapsedTime % 60)).slice(-2)}</p>
+            {/* Métricas em colunas com preenchimento azul e alinhamento vertical */}
+            <div className={`grid grid-cols-1 gap-4 text-center text-white w-full h-full ${isTracking ? 'bg-blue-600' : ''}`}>
+              <div className="border-b border-gray-700">
+                <h3 className="text-lg">Tempo</h3>
+                <p className="text-5xl font-bold">{Math.floor(elapsedTime / 60)}:{('0' + (elapsedTime % 60)).slice(-2)}</p>
               </div>
-              <div>
+              <div className="border-b border-gray-700">
                 <h3 className="text-lg">Distância</h3>
-                <p>{(totalDistance / 1000).toFixed(2)} km</p>
+                <p className="text-5xl font-bold">{(totalDistance > 0 ? (totalDistance / 1000).toFixed(2) : '0.00')} km</p>
+              </div>
+              <div className="border-b border-gray-700">
+                <h3 className="text-lg">Velocidade Média</h3>
+                <p className="text-5xl font-bold">{(totalDistance > 0 ? averageSpeed.toFixed(2) : '0.00')} km/h</p>
               </div>
               <div>
-                <h3 className="text-lg">Velocidade Média</h3>
-                <p>{averageSpeed.toFixed(2)} km/h</p>
+                <h3 className="text-lg">Ritmo Médio</h3>
+                <p className="text-5xl font-bold">{averagePace} /km</p>
               </div>
             </div>
 
             {/* Controles */}
-            <div className="flex space-x-4">
-              <button onClick={handleStart} className="bg-orange-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16">
-                <FontAwesomeIcon icon={faPlay} className="text-2xl" />
-              </button>
-              <button onClick={handlePause} className="bg-yellow-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16">
-                <FontAwesomeIcon icon={faPause} className="text-2xl" />
-              </button>
+            <div className="flex space-x-4 mt-8">
+              {!isTracking || isPaused ? (
+                <button onClick={handleStart} className="bg-orange-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16">
+                  <FontAwesomeIcon icon={faPlay} className="text-2xl" />
+                </button>
+              ) : (
+                <button onClick={handlePause} className="bg-yellow-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16">
+                  <FontAwesomeIcon icon={faPause} className="text-2xl" />
+                </button>
+              )}
               <button onClick={handleFinish} className="bg-red-600 p-4 rounded-full shadow-md text-white flex items-center justify-center w-16 h-16">
                 <FontAwesomeIcon icon={faStop} className="text-2xl" />
               </button>
