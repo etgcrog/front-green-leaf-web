@@ -7,12 +7,6 @@ export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);
 
-    // Verificar se a sessão é válida e contém um token
-    if (!session || !session.user || !session.user.token) {
-      console.log("Sessão não encontrada ou token ausente");
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await request.json();
 
     // Validações básicas podem ser feitas aqui
@@ -27,7 +21,6 @@ export async function POST(request: Request) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${session.user.token}`, // Usar o token da sessão
       },
       body: JSON.stringify({
         firstName: body.firstName,
