@@ -1,10 +1,13 @@
-interface Trail {
+import { User } from "./User"
+
+export interface Trail {
     id: string;
     name: string;
     difficulty: string;
-    distance: number; // Distância da trilha
+    distance: number;
     rating: number;
     photo: string;
-    createdBy: User; // Propriedade para o usuário que criou a trilha
+    createdBy: User;
     author?: string;
   }
+

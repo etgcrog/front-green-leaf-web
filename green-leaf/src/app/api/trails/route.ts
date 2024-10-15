@@ -2,24 +2,8 @@ import { NextResponse } from "next/server";
 import GetDotenvVariable from "@/config/dotenfconfig";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-
-// Definindo as interfaces para os dados das trilhas e usuários
-interface User {
-  id: string; // ID do usuário
-  firstName: string; // Primeiro nome do usuário
-  lastName: string; // Sobrenome do usuário
-}
-
-interface Trail {
-  id: string; // ID da trilha
-  name: string; // Nome da trilha
-  difficulty: string; // Dificuldade da trilha
-  distance: number; // Distância da trilha
-  rating: number; // Nota da trilha
-  photo: string; // Propriedade para a URL da imagem da trilha
-  createdBy: User; // Propriedade para o usuário que criou a trilha
-  author?: string; // Nome do autor da trilha (opcional)
-}
+import { Trail } from "../../../interfaces/Trails"
+// import { User } from "../../../interfaces/User"
 
 export async function GET() {
   try {
